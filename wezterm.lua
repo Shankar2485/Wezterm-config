@@ -1,31 +1,70 @@
-local wezterm           = require 'wezterm'
-local act               = wezterm.action
+local wezterm                  = require 'wezterm'
+local act                      = wezterm.action
 
 ----------------------------------------------------------------------
 -- POWERLINE GLYPHS FROM OFFICIAL NERD FONTS API
 ----------------------------------------------------------------------
-local SOLID_LEFT_ARROW  = wezterm.nerdfonts.pl_right_hard_divider
-local SOLID_RIGHT_ARROW = wezterm.nerdfonts.pl_left_hard_divider
+local SOLID_LEFT_ARROW         = wezterm.nerdfonts.pl_right_hard_divider
+local SOLID_RIGHT_ARROW        = wezterm.nerdfonts.pl_left_hard_divider
 
 ----------------------------------------------------------------------
 -- CHOOSE YOUR THEME HERE
 ----------------------------------------------------------------------
-local active_theme      = "tokyo_night"
+local active_theme             = "catppuccin_mocha"
 
-local theme_candidates  = {
-    catppuccin_mocha     = { "Catppuccin Mocha" },
+local theme_candidates         = {
+    catppuccin_mocha     = { "Catppuccin Mocha", "Catppuccin-Mocha-Custom" },
     catppuccin_macchiato = { "Catppuccin Macchiato", "catppuccin-macchiato", "Catppuccin Macchiato (Gogh)" },
     dracula              = { "Dracula", "Dracula (base16)", "Dracula (Gogh)" },
     gruvbox_dark         = { "GruvboxDark", "Gruvbox Dark", "Gruvbox Dark (Gogh)" },
     gruvbox_material     = { "Gruvbox Material" },
-    tokyo_night          = { "Tokyo Night Moon" },
+    tokyo_night          = { "Tokyo Night Moon", "TokyoNight-Storm", "tokyonight_storm" },
     nord                 = { "Nord" },
     solarized_dark       = { "Solarized (dark)" },
-
 }
 
-local builtin           = wezterm.get_builtin_color_schemes() or {}
+local builtin                  = wezterm.get_builtin_color_schemes() or {}
 
+-- === CUSTOM SCHEMES MERGE ===
+-- Safely pick up the builtin Catppuccin Mocha table (if present) for reuse
+local catppuccin_mocha_builtin = builtin["Catppuccin Mocha"] or {}
+
+-- custom_color_schemes from your earlier snippet, adapted safely
+local custom_color_schemes     = {
+    ["Catppuccin-Mocha-Custom"] = {
+        foreground = catppuccin_mocha_builtin.foreground or "#c6c6c6",
+        background = catppuccin_mocha_builtin.background or "#1e1e2e",
+        cursor_bg = catppuccin_mocha_builtin.cursor_bg or catppuccin_mocha_builtin.foreground or "#c6c6c6",
+        cursor_fg = catppuccin_mocha_builtin.cursor_fg or catppuccin_mocha_builtin.background or "#1e1e2e",
+        cursor_border = catppuccin_mocha_builtin.cursor_border or catppuccin_mocha_builtin.cursor_bg or "#c6c6c6",
+        selection_bg = catppuccin_mocha_builtin.selection_bg or "#334155",
+        selection_fg = catppuccin_mocha_builtin.selection_fg or "#c6c6c6",
+        ansi = catppuccin_mocha_builtin.ansi or
+            { "#24273A", "#F28FAD", "#ABE9B3", "#F8BD96", "#95E6FF", "#DDB6F2", "#BFE6FD", "#C6C8D1" },
+        brights = catppuccin_mocha_builtin.brights or
+            { "#333244", "#F28FAD", "#ABE9B3", "#F8BD96", "#95E6FF", "#DDB6F2", "#BFE6FD", "#E6E9F2" },
+    },
+
+    ["TokyoNight-Storm"] = {
+        foreground = "#c0caf5",
+        background = "#1a1b26",
+        cursor_bg = "#c0caf5",
+        cursor_fg = "#1a1b26",
+        selection_bg = "#33467c",
+        selection_fg = "#c0caf5",
+        ansi = { "#16161D", "#f7768e", "#9ece6a", "#e0af68", "#7aa2f7", "#bb9af7", "#7dcfff", "#a9b1d6" },
+        brights = { "#414868", "#f7768e", "#9ece6a", "#e0af68", "#7aa2f7", "#bb9af7", "#7dcfff", "#c0caf5" },
+    },
+}
+
+-- Merge the custom schemes into the builtin table so they are discoverable
+for name, scheme in pairs(custom_color_schemes) do
+    builtin[name] = scheme
+end
+
+----------------------------------------------------------------------
+-- helper to pick from candidates (unchanged)
+----------------------------------------------------------------------
 local function pick(cands)
     if not cands then return nil end
     for _, name in ipairs(cands) do
@@ -47,7 +86,8 @@ if not resolved then
 end
 
 if not resolved then
-    resolved = pick({ "Catppuccin Mocha", "Builtin Solarized Dark", "Builtin Dark" })
+    resolved = pick({ "Catppuccin Mocha", "Catppuccin-Mocha-Custom", "TokyoNight-Storm", "Builtin Solarized Dark",
+        "Builtin Dark" })
 end
 
 if not resolved then resolved = "Builtin Dark" end
@@ -63,7 +103,7 @@ local function tab_title(tab_info)
     return tab_info.active_pane.title
 end
 
-wezterm.on("format-tab-title", function(tab, tabs, panes, config, hover, max_width)
+wezterm.on("format-tab-title", function(tab, _, _, _, hover, max_width)
     local title       = tab_title(tab)
     title             = wezterm.truncate_right(title, max_width - 2)
 
